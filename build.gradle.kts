@@ -5,8 +5,9 @@
  */
 
 plugins {
+    base
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-    id("org.jetbrains.kotlin.jvm").version("1.3.11")
+    kotlin("jvm") version "1.3.11"
 
     // Apply the application plugin to add support for building a CLI application.
     application
@@ -18,15 +19,26 @@ repositories {
     jcenter()
 }
 
+tasks.withType<Test> {
+    useJUnitPlatform()
+    testLogging {
+        events("skipped", "failed")
+        setExceptionFormat("FULL")
+    }
+}
+
 dependencies {
     // Use the Kotlin JDK 8 standard library.
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation(kotlin("stdlib-jdk8"))
 
-    // Use the Kotlin test library.
-    testImplementation("org.jetbrains.kotlin:kotlin-test")
-
-    // Use the Kotlin JUnit integration.
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+    // Use the Kotlin test library. - junit5
+    testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit5") as String) {
+        exclude("org.junit.jupiter")
+    }
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.1")
+    testImplementation(group = "org.assertj", name = "assertj-core", version = "3.8.0")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.3.1")
 }
 
 application {
