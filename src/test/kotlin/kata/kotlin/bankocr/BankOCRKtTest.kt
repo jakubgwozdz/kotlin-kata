@@ -1,48 +1,49 @@
 package kata.kotlin.bankocr
 
-import org.junit.jupiter.api.*
-
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.TestFactory
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.InputStreamReader
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import kotlin.streams.toList
+import java.net.URL
+import java.util.stream.Stream
+import kotlin.test.Ignore
 
 internal class BankOCRKtTest {
 
     @TestFactory
-    fun bankOCRTests(): List<DynamicContainer> {
+    @Ignore
+    fun useCase1(): Stream<DynamicTest> {
+        val resource = this.javaClass.getResource("/bankOCR/use_case_1.txt")
+        return generateTestCases(resource)
+    }
 
-        val allUseCases = this.javaClass
-            .getResource("/bankOCR/")
-            ?.toURI()
-            ?.let { Paths.get(it) }
-            ?.let { dir -> Files.list(dir).use { it.filter { path -> path.isUseCase() }.toList() } }
-            ?: emptyList<Path>()
+    @TestFactory
+    fun useCase3(): Stream<DynamicTest> {
+        val resource = this.javaClass.getResource("/bankOCR/use_case_3.txt")
+        return generateTestCases(resource)
+    }
 
-        assertNotEquals(emptyList<Path>(), allUseCases)
+    @TestFactory
+    fun useCase4(): Stream<DynamicTest> {
+        val resource = this.javaClass.getResource("/bankOCR/use_case_4.txt")
+        return generateTestCases(resource)
+    }
 
-        return allUseCases.map { path ->
-            val nodes = Files.newInputStream(path).use(this::parse)
-                .mapIndexed { i: Int, data: Pair<List<String>, String> ->
-                    DynamicTest.dynamicTest("test ${i + 1} should return '${data.second}'") {
-                        testSingleCase(data.first, data.second)
-                    }
-                }.stream()
 
-            DynamicContainer.dynamicContainer(path.fileName.toString(), path.toUri(), nodes)
-        }
+    private fun generateTestCases(url: URL): Stream<DynamicTest> {
+        return url.openStream().use(this::parse)
+            .mapIndexed { i: Int, data: Pair<List<String>, String> ->
+                DynamicTest.dynamicTest("test ${i + 1} should return '${data.second}'", url.toURI()) {
+                    testSingleCase(data.first, data.second)
+                }
+            }.stream()
     }
 
     fun testSingleCase(data: List<String>, expected: String) {
         assertEquals(expected, bankOCR(data))
     }
-
-
-    private fun Path.isUseCase() = fileName.toString().matches(".+\\.txt".toRegex())
 
     private fun parse(stream: InputStream): List<Pair<List<String>, String>> {
         val reader = BufferedReader(InputStreamReader(stream))
